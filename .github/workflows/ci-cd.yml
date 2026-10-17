@@ -1,25 +1,40 @@
+
 name: College ERP CI/CD
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  cicd:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Build
-        run: echo "Build successful"
+      - name: Validate application
+        run: |
+          test -f index.html
+          grep -qi "<html" index.html
 
-      - name: Test
-        run: test -f index.html
+      - name: Build Docker image
+        run: docker build -t college-erp-portal:ci .
 
-      - name: Package
-        run: zip college-erp-portal.zip index.html
+      - name: Deploy with Docker Compose
+        run: docker compose up -d
 
-      - name: Deploy
-        run: echo "College ERP Portal deployed successfully"
+      - name: Test deployed application
+        run: |
+          curl --fail --retry 10 --retry-connrefused \
+            --retry-delay 2 http://localhost:8080
+
+      - name: Show deployment status
+        if: always()
+        run: docker compose ps
+
+      - name: Stop test deployment
+        if: always()
+        run: docker compose down
