@@ -4,5 +4,5 @@ services:
     build: .
     container_name: college-erp-portal
     ports:
-  - "8081:80"
+      - "8081:80"
     restart: unless-stopped
